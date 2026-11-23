@@ -9,7 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
+    "@tiptap/extension-image": "^3.35.0",
+    "@tiptap/extension-placeholder": "^3.35.0",
+    "@tiptap/extension-text-align": "^3.35.0",
+    "@tiptap/pm": "^3.35.0",
+    "@tiptap/react": "^3.35.0",
+    "@tiptap/starter-kit": "^3.35.0",
+    "lucide-react": "^1.75.0",
     "next": "16.4.6",
+    "postcss": "^8.5.33",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -17,6 +26,6 @@
     "@tailwindcss/turbopack": "4.3.3",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
-    "tailwindcss": "4.3.3"
+    "tailwindcss": "^4.3.3"
   }
 }

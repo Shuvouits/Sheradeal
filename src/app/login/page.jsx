@@ -1,0 +1,13 @@
+﻿import { redirect } from "next/navigation";
+
+export default async function LoginRedirect({ searchParams }) {
+  const params = await searchParams;
+  const redirectTo = params?.redirect;
+
+  const query =
+    typeof redirectTo === "string"
+      ? `?redirect=${encodeURIComponent(redirectTo)}`
+      : "";
+
+  redirect(`/auth/login${query}`);
+}
