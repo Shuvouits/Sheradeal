@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -20,26 +19,24 @@ export async function POST(request) {
       );
     }
 
-    const apiUrl =
+    const apiUrl = (
       process.env.LARAVEL_API_URL ||
-      "http://127.0.0.1:8000";
+      "http://127.0.0.1:8000"
+    ).replace(/\/+$/, "");
 
-    const response = await fetch(
-      `${apiUrl}/api/auth/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(15000),
-      }
-    );
+    const response = await fetch(`${apiUrl}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    });
 
     const result = await response.json();
 
@@ -47,9 +44,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            result.message ||
-            "Invalid email or password.",
+          message: result.message || "Invalid email or password.",
         },
         { status: response.status }
       );
@@ -68,7 +63,6 @@ export async function POST(request) {
     }
 
     const sixtyDays = 60 * 24 * 60 * 60;
-
     const expiresIn = Number(result?.data?.expires_in);
 
     const cookieAge =
@@ -93,7 +87,6 @@ export async function POST(request) {
     nextResponse.headers.set("Cache-Control", "no-store");
 
     return nextResponse;
-
   } catch (error) {
     console.error("Authentication request failed:", error);
 
