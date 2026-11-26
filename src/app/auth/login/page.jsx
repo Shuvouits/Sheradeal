@@ -18,6 +18,7 @@ import { getDashboardByRole } from "@/lib/authRedirect";
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +43,7 @@ function LoginForm() {
         body: JSON.stringify({
           email: email.trim(),
           password,
+          remember_me: rememberMe,
         }),
       });
 
@@ -78,88 +80,103 @@ function LoginForm() {
   }
 
   return (
-    <main className="shera-login-page">
-      <div className="shera-login-card">
-        <div className="shera-login-body">
-          <Link href="/" className="shera-login-logo">
-            <span className="shera-login-logo-icon">
+    <main className="flex min-h-[calc(100vh-185px)] w-full items-start justify-center bg-[radial-gradient(ellipse_at_18%_30%,#f2f8f5,transparent_55%),radial-gradient(ellipse_at_83%_85%,#eaf5ef,transparent_60%)] bg-white px-5 pt-14 pb-[70px] font-['Segoe_UI',Arial,sans-serif] max-md:px-4 max-md:pt-[35px] max-md:pb-[55px] max-[480px]:px-3 max-[480px]:pt-6 max-[480px]:pb-10">
+      <div className="w-full max-w-[435px] overflow-hidden rounded-[23px] border border-[#d6e9df] border-t-[5px] border-t-[#05714b] bg-white shadow-[0_16px_50px_rgba(0,0,0,0.08)] max-[480px]:rounded-[18px]">
+        <div className="px-[38px] pt-[43px] pb-10 max-[480px]:px-6 max-[480px]:pt-[35px] max-[480px]:pb-8">
+          <Link
+            href="/"
+            className="mx-auto mb-8 flex w-fit items-center justify-center gap-2.5 no-underline"
+          >
+            <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[11px_3px_11px_3px] bg-[#05714b] text-[31px] font-extrabold tracking-[-2px] text-white">
               S
             </span>
 
-            <span className="shera-login-logo-text">
-              <strong>
-                Shera<span>Deal</span>
+            <span className="flex flex-col gap-[3px]">
+              <strong className="text-[25px] leading-none font-extrabold tracking-[-1px] text-[#111111]">
+                Shera<span className="text-[#05714b]">Deal</span>
               </strong>
-              <small>BANGLADESH</small>
+
+              <small className="text-[9px] tracking-[4px] text-[#333333]">
+                BANGLADESH
+              </small>
             </span>
           </Link>
 
-          <div className="shera-login-heading">
-            <h1>Welcome back</h1>
-            <p>Log in to your account to continue shopping</p>
+          <div className="mb-[34px] text-center">
+            <h1 className="mb-[7px] text-[25px] leading-[1.3] font-bold text-[#111111] max-[480px]:text-[23px]">
+              Welcome back
+            </h1>
+
+            <p className="text-[13px] leading-[1.6] text-[#667085]">
+              Log in to your account to continue shopping
+            </p>
           </div>
 
           {error && (
-            <div className="shera-login-error" role="alert">
-              <AlertCircle size={18} />
+            <div
+              role="alert"
+              className="mb-[18px] flex items-start gap-[9px] rounded-[9px] border border-[#fecaca] bg-[#fef2f2] px-3 py-[11px] text-xs leading-[1.5] text-[#b91c1c]"
+            >
+              <AlertCircle
+                size={18}
+                className="shrink-0"
+              />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin}>
-            <div className="shera-login-field">
-              <label htmlFor="shera-email">
+            <div className="mb-[21px]">
+              <label
+                htmlFor="shera-email"
+                className="mb-2 block text-[13px] font-medium text-[#344054]"
+              >
                 Email Address
               </label>
 
-              <div className="shera-login-input">
-                <UserRound size={18} />
+              <div className="flex h-[43px] w-full items-center gap-3 rounded-[11px] border border-[#e5e7eb] bg-white px-[13px] text-[#98a2b3] transition-[border-color,box-shadow] duration-200 focus-within:border-[#05714b] focus-within:shadow-[0_0_0_3px_#eaf5ef]">
+                <UserRound size={18} className="shrink-0" />
 
                 <input
                   id="shera-email"
                   type="email"
                   placeholder="Enter your email address"
                   value={email}
-                  onChange={(event) =>
-                    setEmail(event.target.value)
-                  }
+                  onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
                   required
+                  className="h-full w-full min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[#171717] placeholder:text-[#98a2b3] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="shera-login-field">
-              <label htmlFor="shera-password">
+            <div className="mb-[21px]">
+              <label
+                htmlFor="shera-password"
+                className="mb-2 block text-[13px] font-medium text-[#344054]"
+              >
                 Password
               </label>
 
-              <div className="shera-login-input">
-                <LockKeyhole size={18} />
+              <div className="flex h-[43px] w-full items-center gap-3 rounded-[11px] border border-[#e5e7eb] bg-white px-[13px] text-[#98a2b3] transition-[border-color,box-shadow] duration-200 focus-within:border-[#05714b] focus-within:shadow-[0_0_0_3px_#eaf5ef]">
+                <LockKeyhole size={18} className="shrink-0" />
 
                 <input
                   id="shera-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
                   required
+                  className="h-full w-full min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[#171717] placeholder:text-[#98a2b3] focus:outline-none"
                 />
 
                 <button
                   type="button"
-                  className="shera-password-toggle"
-                  onClick={() =>
-                    setShowPassword((previous) => !previous)
-                  }
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
+                  onClick={() => setShowPassword((previous) => !previous)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[#98a2b3] hover:text-[#05714b]"
                 >
                   {showPassword ? (
                     <Eye size={18} />
@@ -170,16 +187,31 @@ function LoginForm() {
               </div>
             </div>
 
+            <label
+              htmlFor="shera-remember-me"
+              className="mb-5 flex w-fit cursor-pointer items-center gap-[9px] text-[13px] font-medium text-[#475467] select-none"
+            >
+              <input
+                id="shera-remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+                disabled={loading}
+                className="h-4 w-4 cursor-pointer accent-[#05714b] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#05714b] disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <span>Remember me</span>
+            </label>
+
             <button
               type="submit"
-              className="shera-login-submit"
               disabled={loading}
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-[9px] rounded-[11px] border-0 bg-[linear-gradient(110deg,#05714b,#111111)] text-sm font-bold text-white shadow-[0_6px_14px_rgba(0,0,0,0.12)] transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
                 <>
                   <LoaderCircle
                     size={18}
-                    className="shera-login-spinner"
+                    className="animate-spin motion-reduce:animate-none"
                   />
                   Signing in...
                 </>
@@ -189,335 +221,35 @@ function LoginForm() {
             </button>
           </form>
 
-          <div className="shera-login-links">
-            <Link href="/auth/forgot-password">
+          <div className="mt-[22px] flex items-center justify-between gap-3">
+            <Link
+              href="/auth/forgot-password"
+              className="text-[13px] text-[#667085] no-underline hover:underline"
+            >
               Forgot password?
             </Link>
 
-            <Link href="/auth/register">
+            <Link
+              href="/auth/register"
+              className="text-[13px] text-[#05714b] no-underline hover:underline"
+            >
               Create account
             </Link>
           </div>
         </div>
 
-        <div className="shera-login-footer">
+        <div className="flex min-h-[53px] flex-wrap items-center justify-center gap-[5px] border-t border-[#d6e9df] bg-[#f2f8f5] p-[14px] text-[13px] text-[#667085]">
           <span>New to SheraDeal?</span>
 
-          <Link href="/auth/register">
+          <Link
+            href="/auth/register"
+            className="inline-flex items-center gap-1 font-semibold text-[#05714b] no-underline hover:underline"
+          >
             Join us today
             <ArrowRight size={14} />
           </Link>
         </div>
       </div>
-
-      <style>{`
-        .shera-login-page {
-          min-height: calc(100vh - 185px);
-          width: 100%;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding: 56px 20px 70px;
-          font-family: "Segoe UI", Arial, sans-serif;
-          background:
-            radial-gradient(
-              ellipse at 18% 30%,
-              var(--brand-lighter, #f2f8f5),
-              transparent 55%
-            ),
-            radial-gradient(
-              ellipse at 83% 85%,
-              var(--brand-light, #eaf5ef),
-              transparent 60%
-            ),
-            #ffffff;
-        }
-
-        .shera-login-card {
-          width: 100%;
-          max-width: 435px;
-          background: #ffffff;
-          border: 1px solid var(--brand-border, #d6e9df);
-          border-top: 5px solid var(--brand-primary, #05714b);
-          border-radius: 23px;
-          overflow: hidden;
-          box-shadow: 0 16px 50px rgba(0, 0, 0, 0.08);
-        }
-
-        .shera-login-body {
-          padding: 43px 38px 40px;
-        }
-
-        .shera-login-logo {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          width: fit-content;
-          margin: 0 auto 32px;
-          text-decoration: none;
-        }
-
-        .shera-login-logo-icon {
-          width: 46px;
-          height: 46px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--brand-primary, #05714b);
-          color: #ffffff;
-          border-radius: 11px 3px 11px 3px;
-          font-size: 31px;
-          font-weight: 800;
-          letter-spacing: -2px;
-        }
-
-        .shera-login-logo-text {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-
-        .shera-login-logo-text strong {
-          font-size: 25px;
-          font-weight: 800;
-          color: var(--brand-black, #111111);
-          line-height: 1;
-          letter-spacing: -1px;
-        }
-
-        .shera-login-logo-text strong span {
-          color: var(--brand-primary, #05714b);
-        }
-
-        .shera-login-logo-text small {
-          font-size: 9px;
-          letter-spacing: 4px;
-          color: #333333;
-        }
-
-        .shera-login-heading {
-          text-align: center;
-          margin-bottom: 34px;
-        }
-
-        .shera-login-heading h1 {
-          margin: 0 0 7px;
-          font-size: 25px;
-          font-weight: 700;
-          line-height: 1.3;
-          color: var(--brand-black, #111111);
-        }
-
-        .shera-login-heading p {
-          margin: 0;
-          font-size: 13px;
-          color: #667085;
-          line-height: 1.6;
-        }
-
-        .shera-login-field {
-          margin-bottom: 21px;
-        }
-
-        .shera-login-field label {
-          display: block;
-          margin-bottom: 8px;
-          color: #344054;
-          font-size: 13px;
-          font-weight: 500;
-        }
-
-        .shera-login-input {
-          height: 43px;
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 0 13px;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 11px;
-          color: #98a2b3;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .shera-login-input:focus-within {
-          border-color: var(--brand-primary, #05714b);
-          box-shadow: 0 0 0 3px var(--brand-light, #eaf5ef);
-        }
-
-        .shera-login-input input {
-          flex: 1;
-          width: 100%;
-          min-width: 0;
-          height: 100%;
-          outline: none;
-          border: none;
-          background: transparent;
-          color: #171717;
-          font-size: 13px;
-          font-family: inherit;
-        }
-
-        .shera-login-input input::placeholder {
-          color: #98a2b3;
-        }
-
-        .shera-password-toggle {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0;
-          background: none;
-          border: none;
-          color: #98a2b3;
-          cursor: pointer;
-        }
-
-        .shera-password-toggle:hover {
-          color: var(--brand-primary, #05714b);
-        }
-
-        .shera-login-submit {
-          width: 100%;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 9px;
-          border: none;
-          border-radius: 11px;
-          background: linear-gradient(
-            110deg,
-            var(--brand-primary, #05714b),
-            var(--brand-black, #111111)
-          );
-          color: #ffffff;
-          font-size: 14px;
-          font-weight: 700;
-          font-family: inherit;
-          cursor: pointer;
-          box-shadow: 0 6px 14px var(--brand-shadow, rgba(0,0,0,0.12));
-          transition: opacity 0.2s;
-        }
-
-        .shera-login-submit:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-
-        .shera-login-submit:disabled {
-          cursor: not-allowed;
-          opacity: 0.7;
-        }
-
-        .shera-login-links {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          margin-top: 22px;
-        }
-
-        .shera-login-links a {
-          font-size: 13px;
-          color: #667085;
-          text-decoration: none;
-        }
-
-        .shera-login-links a:last-child {
-          color: var(--brand-primary, #05714b);
-        }
-
-        .shera-login-links a:hover {
-          text-decoration: underline;
-        }
-
-        .shera-login-footer {
-          min-height: 53px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 5px;
-          padding: 14px;
-          background: var(--brand-lighter, #f2f8f5);
-          border-top: 1px solid var(--brand-border, #d6e9df);
-          font-size: 13px;
-          color: #667085;
-        }
-
-        .shera-login-footer a {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          color: var(--brand-primary, #05714b);
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .shera-login-footer a:hover {
-          text-decoration: underline;
-        }
-
-        .shera-login-error {
-          display: flex;
-          align-items: flex-start;
-          gap: 9px;
-          padding: 11px 12px;
-          margin-bottom: 18px;
-          border-radius: 9px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #b91c1c;
-          font-size: 12px;
-          line-height: 1.5;
-        }
-
-        .shera-login-error svg {
-          flex-shrink: 0;
-        }
-
-        .shera-login-spinner {
-          animation: shera-spin 0.8s linear infinite;
-        }
-
-        @keyframes shera-spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 768px) {
-          .shera-login-page {
-            padding: 35px 16px 55px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .shera-login-page {
-            padding: 24px 12px 40px;
-          }
-
-          .shera-login-card {
-            border-radius: 18px;
-          }
-
-          .shera-login-body {
-            padding: 35px 24px 32px;
-          }
-
-          .shera-login-heading h1 {
-            font-size: 23px;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .shera-login-spinner {
-            animation: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }

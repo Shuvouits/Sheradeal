@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, remember_me } = await request.json();
 
     if (
       typeof email !== "string" ||
@@ -18,6 +18,8 @@ export async function POST(request) {
         { status: 422 }
       );
     }
+
+    const rememberMe = remember_me === true;
 
     const apiUrl = (
       process.env.LARAVEL_API_URL ||
@@ -81,7 +83,7 @@ export async function POST(request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: cookieAge,
+      ...(rememberMe ? { maxAge: cookieAge } : {}),
     });
 
     nextResponse.headers.set("Cache-Control", "no-store");
