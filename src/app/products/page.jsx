@@ -1,5 +1,4 @@
-import ProductSearchPage from "@/components/frontend/products/ProductSearchPage";
-import SiteFooter from "@/components/frontend/footer/SiteFooter";
+﻿import ProductSearchPage from "@/components/frontend/products/ProductSearchPage";
 
 export async function generateMetadata({ searchParams }) {
   const params = await searchParams;
@@ -43,7 +42,8 @@ export default async function ProductsPage({ searchParams }) {
         page={page}
       />
 
-      <SiteFooter />
+
     </>
   );
 }
+

@@ -1,5 +1,4 @@
-import CheckoutPage from "@/components/frontend/checkout/CheckoutPage";
-import SiteFooter from "@/components/frontend/footer/SiteFooter";
+﻿import CheckoutPage from "@/components/frontend/checkout/CheckoutPage";
 
 export const metadata = {
   title: "Checkout | SheraDeal",
@@ -10,7 +9,7 @@ export default function Checkout() {
   return (
     <>
       <CheckoutPage />
-      <SiteFooter />
+
     </>
   );
 }

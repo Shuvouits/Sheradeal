@@ -1,5 +1,4 @@
-import BrandProductsPage from "@/components/frontend/brands/BrandProductsPage";
-import SiteFooter from "@/components/frontend/footer/SiteFooter";
+﻿import BrandProductsPage from "@/components/frontend/brands/BrandProductsPage";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -24,7 +23,7 @@ export default async function BrandPage({ params }) {
   return (
     <>
       <BrandProductsPage slug={slug} />
-      <SiteFooter />
+
     </>
   );
 }
