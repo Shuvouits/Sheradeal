@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AdminAccountMenu from "./AdminAccountMenu";
@@ -36,6 +35,18 @@ import {
   X,
 } from "lucide-react";
 
+const orderLinks = [
+  { label: "All Orders", href: "/admin/orders", exact: true },
+  { label: "Create Order", href: "/admin/orders/create" },
+  { label: "Pre-orders", href: "/admin/preorders" },
+  { label: "Returns & Refunds", href: "/admin/returns" },
+  { label: "Quotes", href: "/admin/quotes" },
+  {
+    label: "Abandoned Checkouts",
+    href: "/admin/abandoned-checkouts",
+  },
+];
+
 const productLinks = [
   { label: "All Products", href: "/admin/products" },
   { label: "Global Variants", href: "/admin/global-variants" },
@@ -62,7 +73,7 @@ const navigation = [
   {
     label: "Orders",
     icon: ClipboardList,
-    submenu: true,
+    children: orderLinks,
   },
   {
     label: "Delivery",
@@ -131,10 +142,28 @@ const navigation = [
   },
 ];
 
-function isActivePath(pathname, href) {
+function isActivePath(pathname, href, exact = false) {
   if (!href) return false;
 
+  if (exact) {
+    return pathname === href;
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getActiveGroup(pathname) {
+  for (const item of navigation) {
+    if (!item.children) continue;
+
+    const matched = item.children.some((child) =>
+      isActivePath(pathname, child.href, child.exact)
+    );
+
+    if (matched) return item.label;
+  }
+
+  return null;
 }
 
 export default function AdminShell({ user, children }) {
@@ -143,13 +172,13 @@ export default function AdminShell({ user, children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState({
-    Products: true,
-  });
-
-  const productActive = productLinks.some((link) =>
-    isActivePath(pathname, link.href)
+  const [expanded, setExpanded] = useState(() =>
+    getActiveGroup(pathname)
   );
+
+  useEffect(() => {
+    setExpanded(getActiveGroup(pathname));
+  }, [pathname]);
 
   const searchTerm = search.trim().toLowerCase();
 
@@ -174,17 +203,17 @@ export default function AdminShell({ user, children }) {
   function toggleMenu(label) {
     if (collapsed) {
       setCollapsed(false);
-      setExpanded((previous) => ({
-        ...previous,
-        [label]: true,
-      }));
+      setExpanded(label);
       return;
     }
 
-    setExpanded((previous) => ({
-      ...previous,
-      [label]: !previous[label],
-    }));
+    setExpanded((previous) =>
+      previous === label ? null : label
+    );
+  }
+
+  function toggleSidebar() {
+    setCollapsed((previous) => !previous);
   }
 
   return (
@@ -237,14 +266,25 @@ export default function AdminShell({ user, children }) {
           {menuItems.map((item) => {
             const Icon = item.icon;
 
+            const childActive = item.children?.some((child) =>
+              isActivePath(
+                pathname,
+                child.href,
+                child.exact
+              )
+            );
+
             const active =
               isActivePath(pathname, item.href) ||
-              (item.label === "Products" && productActive);
+              Boolean(childActive);
 
-            const isExpanded = Boolean(
-              expanded[item.label] ||
-              (searchTerm && item.children)
-            );
+            const isExpanded =
+              expanded === item.label ||
+              Boolean(searchTerm && item.children);
+
+            const submenuId = `sd-${item.label
+              .toLowerCase()
+              .replace(/\s+/g, "-")}-submenu`;
 
             const content = (
               <>
@@ -280,15 +320,15 @@ export default function AdminShell({ user, children }) {
                     }`}
                     onClick={() => toggleMenu(item.label)}
                     aria-expanded={isExpanded}
-                    aria-controls="sd-products-submenu"
-                    title="Expand or collapse Products"
+                    aria-controls={submenuId}
+                    title={`Expand or collapse ${item.label}`}
                   >
                     {content}
                   </button>
 
                   {isExpanded && (
                     <div
-                      id="sd-products-submenu"
+                      id={submenuId}
                       className="sd-admin-submenu"
                     >
                       {item.children.map((child) =>
@@ -298,7 +338,11 @@ export default function AdminShell({ user, children }) {
                             href={child.href}
                             onClick={closeMobile}
                             className={`sd-admin-submenu-item ${
-                              isActivePath(pathname, child.href)
+                              isActivePath(
+                                pathname,
+                                child.href,
+                                child.exact
+                              )
                                 ? "active"
                                 : ""
                             }`}
@@ -360,7 +404,7 @@ export default function AdminShell({ user, children }) {
             <button
               type="button"
               className="sd-admin-collapse-btn"
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={toggleSidebar}
               aria-label="Toggle sidebar"
             >
               {collapsed ? (
@@ -403,6 +447,7 @@ export default function AdminShell({ user, children }) {
             <Link
               href="/"
               className="sd-admin-browse"
+              target="_blank"
             >
               <Globe size={17} />
               Browse Website

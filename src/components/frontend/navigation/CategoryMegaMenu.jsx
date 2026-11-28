@@ -114,10 +114,16 @@ export default function CategoryMegaMenu({
 
     const hasProvidedCategories = Array.isArray(providedCategories);
 
-    const categories = hasProvidedCategories
-        ? providedCategories
-        : fetchedCategories;
+   const categories = hasProvidedCategories
+    ? providedCategories
+    : fetchedCategories;
 
+const visibleCategories = categories.filter(
+    (category) =>
+        (category.show_in_megamenu === true ||
+            category.show_in_megamenu === 1) &&
+        category.is_active !== false
+);
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -386,13 +392,13 @@ export default function CategoryMegaMenu({
                                     <div className="py-12 text-center text-sm text-red-600">
                                         {error}
                                     </div>
-                                ) : categories.length === 0 ? (
+                                ) :  visibleCategories.length === 0 ? (
                                     <div className="py-12 text-center text-sm text-gray-500">
                                         No categories available.
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-3 gap-x-2 gap-y-1 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-10">
-                                        {categories.map((category) => (
+                                        {visibleCategories.map((category) => (
                                             <CategoryItem
                                                 key={category.id}
                                                 category={category}
@@ -405,7 +411,7 @@ export default function CategoryMegaMenu({
 
                             <div className="flex items-center justify-between border-t border-gray-100 bg-[#FAFCFB] px-5 py-2.5">
                                 <span className="text-xs text-gray-500">
-                                    {categories.length} categories
+                                    {visibleCategories.length} categories
                                 </span>
 
                                 <Link

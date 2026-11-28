@@ -231,6 +231,55 @@ export default function CategoriesList() {
     }
   }
 
+
+
+  async function toggleMegaMenu(category) {
+    if (busyId !== null) return;
+
+    const nextValue = !category.show_in_megamenu;
+
+    setBusyId(category.id);
+    setError("");
+    setNotice("");
+
+    try {
+      const updated = await categoryRequest(
+        `/api/admin/categories/${category.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            show_in_megamenu: nextValue,
+          }),
+        }
+      );
+
+      setRows((current) =>
+        current.map((item) =>
+          item.id === category.id
+            ? {
+                ...item,
+                show_in_megamenu:
+                  updated?.show_in_megamenu ?? nextValue,
+              }
+            : item
+        )
+      );
+
+      setNotice(
+        `${category.name} ${nextValue ? "added to" : "removed from"} Mega Menu.`
+      );
+    } catch (err) {
+      setError(err.message || "Unable to update Mega Menu status.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+
   return (
     <div className="cat-root">
       <CategoryStyles />
@@ -360,6 +409,7 @@ export default function CategoriesList() {
                   <th>Parent</th>
                   <th>Products</th>
                   <th>Featured</th>
+                  <th>Mega Menu</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -429,6 +479,33 @@ export default function CategoriesList() {
                             "—"
                           )}
                         </td>
+
+
+<td>
+  <button
+    type="button"
+    role="switch"
+    aria-checked={Boolean(category.show_in_megamenu)}
+    aria-label={`${category.show_in_megamenu ? "Hide" : "Show"} ${category.name} in Mega Menu`}
+    title={category.show_in_megamenu ? "Visible in Mega Menu" : "Hidden from Mega Menu"}
+    disabled={busyId !== null}
+    onClick={() => toggleMegaMenu(category)}
+    className={`relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full border-0 p-0.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#05714B] disabled:cursor-not-allowed disabled:opacity-50 ${
+      category.show_in_megamenu
+        ? "bg-[#05714B]"
+        : "bg-gray-300"
+    }`}
+  >
+    <span
+      className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        category.show_in_megamenu
+          ? "translate-x-5"
+          : "translate-x-0"
+      }`}
+    />
+  </button>
+</td>
+
 
                         <td>
                           <span

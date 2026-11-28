@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   MapPin,
@@ -14,15 +15,17 @@ import {
   LoaderCircle,
 } from "lucide-react";
 
-import SiteFooter from "@/components/frontend/footer/SiteFooter";
-
 import {
+  CHECKOUT_STORAGE_KEY,
   formatBDT,
   getBuyNowItem,
   SHIPPING_RATES,
 } from "./checkoutUtils";
 
-import { CART_CHECKOUT_KEY } from "@/lib/cartStore";
+import {
+  CART_CHECKOUT_KEY,
+  clearCart,
+} from "@/lib/cartStore";
 
 const INPUT_CLASS =
   "w-full rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-[#05714B] focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-400";
@@ -39,7 +42,11 @@ function loadCheckoutItems() {
       );
 
       return Array.isArray(parsed)
-        ? parsed.filter((item) => item?.id && item.quantity > 0)
+        ? parsed.filter(
+            (item) =>
+              Number(item?.id) > 0 &&
+              Number(item.quantity) > 0
+          )
         : [];
     }
 
@@ -75,8 +82,11 @@ function CheckoutCard({ title, icon: Icon, children }) {
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -87,7 +97,6 @@ export default function CheckoutPage() {
 
   const [shippingLocation, setShippingLocation] = useState("dhaka");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setItems(loadCheckoutItems());
@@ -121,7 +130,7 @@ export default function CheckoutPage() {
           address: user.delivery_address || "",
         }));
       } catch {
-        // Guest checkout remains available.
+        // Guest checkout is supported.
       }
     }
 
@@ -152,7 +161,7 @@ export default function CheckoutPage() {
   );
 
   const discount = Math.max(0, originalTotal - subtotal);
-  const shipping = SHIPPING_RATES[shippingLocation];
+  const shipping = SHIPPING_RATES[shippingLocation] ?? 80;
   const total = subtotal + shipping;
 
   function updateCustomer(field, value) {
@@ -162,14 +171,14 @@ export default function CheckoutPage() {
     }));
 
     setError("");
-    setMessage("");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
+    if (submitting) return;
+
     setError("");
-    setMessage("");
 
     if (customer.name.trim().length < 2) {
       setError("সম্পূর্ণ নাম লিখুন।");
@@ -177,7 +186,7 @@ export default function CheckoutPage() {
     }
 
     if (!/^01[3-9]\d{8}$/.test(customer.phone.trim())) {
-      setError("সঠিক মোবাইল নম্বর লিখুন।");
+      setError("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন।");
       return;
     }
 
@@ -186,9 +195,133 @@ export default function CheckoutPage() {
       return;
     }
 
-    setMessage(
-      "Checkout তথ্য প্রস্তুত। Laravel Order API এখনো সংযুক্ত হয়নি, তাই কোনো Order তৈরি হয়নি।"
+    if (items.length === 0) {
+      setError("আপনার Checkout-এ কোনো Product নেই।");
+      return;
+    }
+
+    const orderItems = items.map((item) => {
+      const productId = Number(item.product_id ?? item.id);
+      const quantity = Number(item.quantity);
+      const variantId = item.variant_id ?? null;
+
+      return {
+        product_id: productId,
+        quantity,
+        ...(variantId
+          ? { variant_id: Number(variantId) }
+          : {}),
+      };
+    });
+
+    const hasInvalidItem = orderItems.some(
+      (item) =>
+        !Number.isInteger(item.product_id) ||
+        item.product_id < 1 ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.quantity > 100 ||
+        (item.variant_id !== undefined &&
+          (!Number.isInteger(item.variant_id) ||
+            item.variant_id < 1))
     );
+
+    if (hasInvalidItem) {
+      setError("Cart-এর Product বা Quantity সঠিক নয়।");
+      return;
+    }
+
+    const payload = {
+      customer_name: customer.name.trim(),
+      customer_phone: customer.phone.trim(),
+      delivery_address: customer.address.trim(),
+      customer_note: customer.note.trim() || null,
+      shipping_location:
+        shippingLocation === "dhaka"
+          ? "inside_dhaka"
+          : "outside_dhaka",
+      payment_method: "cod",
+      items: orderItems,
+    };
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/storefront/checkout", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        const validationError = result?.errors
+          ? Object.values(result.errors).flat()[0]
+          : null;
+
+        throw new Error(
+          validationError ||
+            result?.message ||
+            "Order তৈরি করা যায়নি।"
+        );
+      }
+
+      const order = result.data;
+
+      if (!order?.id || !order?.order_number) {
+        throw new Error(
+          "Order response incomplete. Check your orders before retrying."
+        );
+      }
+
+      const confirmation = {
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        delivery_address: order.delivery_address,
+        shipping_location: order.shipping_location,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        status: order.status,
+        subtotal: order.subtotal,
+        discount_total: order.discount_total,
+        delivery_charge: order.delivery_charge,
+        grand_total: order.grand_total,
+        created_at: order.created_at,
+      };
+
+      sessionStorage.setItem(
+        "sheradeal_last_order",
+        JSON.stringify(confirmation)
+      );
+
+      const source = sessionStorage.getItem(
+        "sheradeal_checkout_source"
+      );
+
+      if (source === "cart") {
+        clearCart();
+      }
+
+      sessionStorage.removeItem(CART_CHECKOUT_KEY);
+      sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      sessionStorage.removeItem("sheradeal_checkout_source");
+
+      router.replace("/checkout/success");
+    } catch (err) {
+      setError(
+        err.message ||
+          "Order-এর অবস্থা নিশ্চিত করা যাচ্ছে না। পুনরায় চেষ্টা করার আগে Order যাচাই করুন।"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (loading) {
@@ -210,6 +343,10 @@ export default function CheckoutPage() {
         <h1 className="mt-5 text-2xl font-bold">
           No checkout items found
         </h1>
+
+        <p className="mt-2 text-sm text-gray-500">
+          Add products to your cart to continue.
+        </p>
 
         <Link
           href="/products"
@@ -341,10 +478,11 @@ export default function CheckoutPage() {
                       <button
                         key={option.id}
                         type="button"
+                        disabled={submitting}
                         onClick={() =>
                           setShippingLocation(option.id)
                         }
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-left ${
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-left disabled:opacity-60 ${
                           selected
                             ? "border-[#05714B] bg-[#ECFDF5] ring-1 ring-[#05714B]"
                             : "border-gray-200"
@@ -383,29 +521,27 @@ export default function CheckoutPage() {
               </div>
 
               {error && (
-                <p
-                  role="alert"
-                  className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600"
-                >
-                  {error}
-                </p>
-              )}
-
-              {message && (
                 <div
-                  role="status"
-                  className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800"
+                  role="alert"
+                  className="mt-4 flex gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700"
                 >
                   <AlertCircle size={18} className="shrink-0" />
-                  {message}
+                  <span>{error}</span>
                 </div>
               )}
 
               <button
                 type="submit"
-                className="mt-5 w-full cursor-pointer rounded-lg bg-[#05714B] py-3.5 text-sm font-bold text-white hover:bg-[#045C3D]"
+                disabled={submitting}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#05714B] py-3.5 text-sm font-bold text-white hover:bg-[#045C3D] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                অর্ডার করুন ({formatBDT(total)})
+                {submitting && (
+                  <LoaderCircle size={18} className="animate-spin" />
+                )}
+
+                {submitting
+                  ? "অর্ডার প্রক্রিয়াধীন..."
+                  : `অর্ডার করুন (${formatBDT(total)})`}
               </button>
             </CheckoutCard>
 
@@ -414,13 +550,14 @@ export default function CheckoutPage() {
               icon={ShoppingBag}
             >
               <div className="divide-y divide-gray-100">
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <div
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-gray-50">
                       {item.image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={item.image_url}
                           alt={item.title}
@@ -445,7 +582,7 @@ export default function CheckoutPage() {
 
                       <p className="mt-1 text-sm font-bold text-[#05714B]">
                         {formatBDT(
-                          Number(item.selling_price) *
+                          Number(item.selling_price ?? item.price ?? 0) *
                             Number(item.quantity)
                         )}
                       </p>
@@ -456,10 +593,7 @@ export default function CheckoutPage() {
             </CheckoutCard>
           </div>
 
-          <CheckoutCard
-            title="Order Summary"
-            icon={ReceiptText}
-          >
+          <CheckoutCard title="Order Summary" icon={ReceiptText}>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between gap-2">
                 <span className="text-gray-600">
@@ -471,7 +605,9 @@ export default function CheckoutPage() {
 
               {discount > 0 && (
                 <div className="flex justify-between gap-2">
-                  <span className="text-gray-600">Discount</span>
+                  <span className="text-gray-600">
+                    Discount
+                  </span>
 
                   <span className="font-semibold text-[#05714B]">
                     − {formatBDT(discount)}
@@ -480,7 +616,9 @@ export default function CheckoutPage() {
               )}
 
               <div className="flex justify-between gap-2">
-                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-600">
+                  Subtotal
+                </span>
 
                 <span>{formatBDT(subtotal)}</span>
               </div>
@@ -494,7 +632,9 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex items-center justify-between border-t border-dashed border-gray-200 pt-4">
-                <span className="font-bold">Total</span>
+                <span className="font-bold">
+                  Total
+                </span>
 
                 <span className="text-[23px] font-extrabold text-[#05714B]">
                   {formatBDT(total)}
@@ -503,9 +643,16 @@ export default function CheckoutPage() {
 
               <button
                 type="submit"
-                className="w-full cursor-pointer rounded-lg bg-[#05714B] py-3.5 text-sm font-bold text-white hover:bg-[#045C3D]"
+                disabled={submitting}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#05714B] py-3.5 text-sm font-bold text-white hover:bg-[#045C3D] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                অর্ডার করুন ({formatBDT(total)})
+                {submitting && (
+                  <LoaderCircle size={18} className="animate-spin" />
+                )}
+
+                {submitting
+                  ? "অর্ডার প্রক্রিয়াধীন..."
+                  : `অর্ডার করুন (${formatBDT(total)})`}
               </button>
 
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
@@ -513,6 +660,7 @@ export default function CheckoutPage() {
                   size={15}
                   className="text-[#05714B]"
                 />
+
                 Cash on delivery · Pay when you receive it
               </p>
             </div>
@@ -533,14 +681,21 @@ export default function CheckoutPage() {
 
             <button
               type="button"
+              disabled={submitting}
               onClick={() =>
                 document
                   .getElementById("sheradeal-checkout-form")
                   ?.requestSubmit()
               }
-              className="rounded-lg bg-[#05714B] px-5 py-3 text-xs font-bold text-white"
+              className="flex items-center gap-2 rounded-lg bg-[#05714B] px-5 py-3 text-xs font-bold text-white disabled:opacity-60"
             >
-              অর্ডার করুন
+              {submitting && (
+                <LoaderCircle size={16} className="animate-spin" />
+              )}
+
+              {submitting
+                ? "প্রক্রিয়াধীন..."
+                : "অর্ডার করুন"}
             </button>
           </div>
         </div>
